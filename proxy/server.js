@@ -26,45 +26,25 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
         headers: {
           'Ocp-Apim-Subscription-Key': AZURE_SPEECH_KEY,
           'Content-Type': 'audio/wav',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         }
       }
     );
 
-    const nBest = response.data?.NBest?.[0];
-    const display = nBest?.Display || '';
-    const azureWords = nBest?.Words || [];
+    const words = response.data?.NBest?.[0]?.Words || [];
 
-    const displayTokens = display.match(/\w+|[^\w\s]+|\s+/g) || [];
-    const result = [];
-    let wordIndex = 0;
-
-    for (const token of displayTokens) {
-      if (/\w/.test(token) && wordIndex < azureWords.length) {
-        const wordTiming = azureWords[wordIndex];
-        result.push({
-          word: token,
-          start: wordTiming.Offset / 10000,
-          end: (wordTiming.Offset + wordTiming.Duration) / 10000
-        });
-        wordIndex++;
-      } else {
-        // Add punctuation or space with same timing as previous word
-        const last = result[result.length - 1];
-        result.push({
-          word: token,
-          start: last?.end || 0,
-          end: last?.end || 0
-        });
-      }
-    }
+    const result = words.map(w => ({
+      word: w.Word,
+      start: w.Offset / 10000, // convert to milliseconds
+      end: (w.Offset + w.Duration) / 10000
+    }));
 
     res.json(result);
   } catch (err) {
     console.error(err.response?.data || err.message);
     res.status(500).json({ error: 'Azure transcription failed' });
   } finally {
-    fs.unlinkSync(audioPath);
+    fs.unlinkSync(audioPath); // cleanup temp file
   }
 });
 
