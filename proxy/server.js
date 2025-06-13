@@ -39,26 +39,47 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
       return res.status(400).json({ error: 'No valid transcription found' });
     }
 
-    const start = words[0].Offset / 10000;
-    const end = (words[words.length - 1].Offset + words[words.length - 1].Duration) / 10000;
+    // Split Display into sentences
+    const sentenceRegex = /[^.?!]+[.?!]/g;
+    const sentenceTexts = displayText.match(sentenceRegex)?.map(s => s.trim()) || [displayText.trim()];
 
-    res.json([
-      {
-        text: displayText,
+    const result = [];
+    let wordIndex = 0;
+
+    for (const sentence of sentenceTexts) {
+      const sentenceWords = [];
+      while (
+        wordIndex < words.length &&
+        sentence.includes(words[wordIndex].Word) // fuzzy match, can improve
+      ) {
+        const w = words[wordIndex];
+        sentenceWords.push({
+          word: w.Word,
+          start: w.Offset / 10000,
+          end: (w.Offset + w.Duration) / 10000
+        });
+        wordIndex++;
+        if (sentenceWords.map(sw => sw.word).join(' ').length >= sentence.length) break;
+      }
+
+      if (sentenceWords.length === 0) continue;
+
+      const start = sentenceWords[0].start;
+      const end = sentenceWords[sentenceWords.length - 1].end;
+
+      result.push({
+        text: sentence,
         start,
         end,
-        words
-      }
-    ]);
+        words: sentenceWords
+      });
+    }
+
+    res.json(result);
   } catch (err) {
     console.error(err.response?.data || err.message);
     res.status(500).json({ error: 'Azure transcription failed' });
   } finally {
     fs.unlinkSync(audioPath);
   }
-});
-
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
