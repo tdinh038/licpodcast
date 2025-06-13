@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const AZURE_SPEECH_KEY = 'YOUR_SPEECH_KEY';
+const AZURE_SPEECH_KEY = 'DbChnvAqhN9oWKLMFInTBMkHyuYesKxCopXXtO5UIi37sTFjGfwHJQQJ99BFACYeBjFXJ3w3AAAYACOGIJAx';
 const AZURE_REGION = 'eastus'; // or your region, like 'southeastasia'
 
 // Sentiment API (your existing one)
@@ -45,7 +45,7 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
       audioData,
       {
         headers: {
-          'Ocp-Apim-Subscription-Key': DbChnvAqhN9oWKLMFInTBMkHyuYesKxCopXXtO5UIi37sTFjGfwHJQQJ99BFACYeBjFXJ3w3AAAYACOGIJAx,
+          'Ocp-Apim-Subscription-Key': AZURE_SPEECH_KEY,
           'Content-Type': 'audio/wav',
           'Accept': 'application/json'
         }
