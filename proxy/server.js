@@ -41,7 +41,7 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
     const audioData = fs.readFileSync(audioPath);
 
     const response = await axios.post(
-      `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed`,
+      `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed&wordLevelTimestamps=true`,
       audioData,
       {
         headers: {
@@ -52,6 +52,8 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
       }
     );
 
+    console.log('Azure response:', JSON.stringify(response.data, null, 2));
+    
     const nBest = response.data?.NBest?.[0];
     const words = nBest?.Words || [];
 
