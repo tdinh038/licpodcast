@@ -39,7 +39,6 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
       return res.status(400).json({ error: 'No valid transcription found' });
     }
 
-    // Split Display into sentences
     const sentenceRegex = /[^.?!]+[.?!]/g;
     const sentenceTexts = displayText.match(sentenceRegex)?.map(s => s.trim()) || [displayText.trim()];
 
@@ -50,7 +49,7 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
       const sentenceWords = [];
       while (
         wordIndex < words.length &&
-        sentence.includes(words[wordIndex].Word) // fuzzy match, can improve
+        sentence.includes(words[wordIndex].Word)
       ) {
         const w = words[wordIndex];
         sentenceWords.push({
@@ -82,4 +81,10 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
   } finally {
     fs.unlinkSync(audioPath);
   }
+});
+
+// ✅ Use environment-defined port for Render compatibility
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
