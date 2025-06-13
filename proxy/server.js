@@ -32,36 +32,27 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
     );
 
     const nBest = response.data?.NBest?.[0];
-    const display = nBest?.Display || '';
-    const azureWords = nBest?.Words || [];
+    const words = nBest?.Words || [];
 
-    const displayTokens = display.match(/\w+|[.,!?;]/g) || [];
-    const result = [];
-    let tokenIndex = 0;
+    const result = words.map((w, i) => {
+      let word = w.Word;
 
-    for (const w of azureWords) {
-      while (
-        tokenIndex < displayTokens.length &&
-        !displayTokens[tokenIndex].toLowerCase().startsWith(w.Word.toLowerCase())
-      ) {
-        result.push({
-          word: displayTokens[tokenIndex],
-          start: w.Offset / 10000,
-          end: w.Offset / 10000
-        });
-        tokenIndex++;
+      // Capitalize first word
+      if (i === 0 && word.length > 0) {
+        word = word[0].toUpperCase() + word.slice(1);
       }
 
-      const displayToken = displayTokens[tokenIndex] || w.Word;
+      // Add period to last word if missing
+      if (i === words.length - 1 && !/[.?!]$/.test(word)) {
+        word += '.';
+      }
 
-      result.push({
-        word: displayToken,
+      return {
+        word,
         start: w.Offset / 10000,
         end: (w.Offset + w.Duration) / 10000
-      });
-
-      tokenIndex++;
-    }
+      };
+    });
 
     res.json(result);
   } catch (err) {
