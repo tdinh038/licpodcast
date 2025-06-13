@@ -32,27 +32,32 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
     );
 
     const nBest = response.data?.NBest?.[0];
-    const words = nBest?.Words || [];
+    const display = nBest?.Display || '';
+    const azureWords = nBest?.Words || [];
 
-    const result = words.map((w, i) => {
-      let word = w.Word;
+    const displayTokens = display.match(/\w+|[^\w\s]+|\s+/g) || [];
+    const result = [];
+    let wordIndex = 0;
 
-      // Capitalize first word
-      if (i === 0 && word.length > 0) {
-        word = word[0].toUpperCase() + word.slice(1);
+    for (const token of displayTokens) {
+      if (/\w/.test(token) && wordIndex < azureWords.length) {
+        const wordTiming = azureWords[wordIndex];
+        result.push({
+          word: token,
+          start: wordTiming.Offset / 10000,
+          end: (wordTiming.Offset + wordTiming.Duration) / 10000
+        });
+        wordIndex++;
+      } else {
+        // Add punctuation or space with same timing as previous word
+        const last = result[result.length - 1];
+        result.push({
+          word: token,
+          start: last?.end || 0,
+          end: last?.end || 0
+        });
       }
-
-      // Add period to last word if missing
-      if (i === words.length - 1 && !/[.?!]$/.test(word)) {
-        word += '.';
-      }
-
-      return {
-        word,
-        start: w.Offset / 10000,
-        end: (w.Offset + w.Duration) / 10000
-      };
-    });
+    }
 
     res.json(result);
   } catch (err) {
