@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 
 function App() {
   const [file, setFile] = useState(null);
@@ -7,6 +7,11 @@ function App() {
   const [ready, setReady] = useState(false);
   const [fallbackTranscript, setFallbackTranscript] = useState('');
   const audioRef = useRef(null);
+
+  // Create stable audio URL
+  const audioUrl = useMemo(() => {
+    return file ? URL.createObjectURL(file) : null;
+  }, [file]);
 
   useEffect(() => {
     // Ping backend to warm it up
@@ -23,6 +28,16 @@ function App() {
     }, 100);
     return () => clearInterval(interval);
   }, [words]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.onloadedmetadata = () => {
+      console.log('🕒 Audio duration:', audioRef.current.duration);
+    };
+    audioRef.current.onplay = () => console.log('▶️ Playing');
+    audioRef.current.onpause = () => console.log('⏸️ Paused');
+    audioRef.current.onerror = (e) => console.log('⚠️ Audio error:', e);
+  }, [audioUrl]);
 
   const uploadAndTranscribe = async (audioFile) => {
     const formData = new FormData();
@@ -72,11 +87,11 @@ function App() {
         onChange={handleChange}
         disabled={!ready}
       />
-      {file && (
+      {audioUrl && (
         <audio
           ref={audioRef}
           controls
-          src={URL.createObjectURL(file)}
+          src={audioUrl}
           style={{ marginTop: '1rem', width: '100%' }}
         />
       )}
