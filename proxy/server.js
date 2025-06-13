@@ -31,20 +31,30 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
       }
     );
 
-    const words = response.data?.NBest?.[0]?.Words || [];
+    const nBest = response.data?.NBest?.[0];
+    const words = nBest?.Words || [];
+    const displayText = nBest?.Display || "";
 
-    const result = words.map(w => ({
-      word: w.Word,
-      start: w.Offset / 10000, // convert to milliseconds
-      end: (w.Offset + w.Duration) / 10000
-    }));
+    if (!words.length || !displayText) {
+      return res.status(400).json({ error: 'No valid transcription found' });
+    }
 
-    res.json(result);
+    const start = words[0].Offset / 10000;
+    const end = (words[words.length - 1].Offset + words[words.length - 1].Duration) / 10000;
+
+    res.json([
+      {
+        text: displayText,
+        start,
+        end,
+        words
+      }
+    ]);
   } catch (err) {
     console.error(err.response?.data || err.message);
     res.status(500).json({ error: 'Azure transcription failed' });
   } finally {
-    fs.unlinkSync(audioPath); // cleanup temp file
+    fs.unlinkSync(audioPath);
   }
 });
 
