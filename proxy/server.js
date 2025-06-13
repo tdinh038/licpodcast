@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const AZURE_KEY = 'DbChnvAqhN9oWKLMFInTBMkHyuYesKxCopXXtO5UIi37sTFjGfwHJQQJ99BFACYeBjFXJ3w3AAAYACOGIJAx';
+const AZURE_KEY = 'EkOt3bdU5DvWpFa0cIWv7pwsFjLTx5izOlANpHbnsStCmEFtAAyLJQQJ99BFACYeBjFXJ3w3AAAaACOGVlEV';
 const AZURE_ENDPOINT = 'https://licsentiment.cognitiveservices.azure.com/text/analytics/v3.1/sentiment';
 
 app.post('/sentiment', async (req, res) => {
